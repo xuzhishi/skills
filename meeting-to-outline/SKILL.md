@@ -27,7 +27,8 @@ metadata:
 ### 1. tmeet CLI（强依赖）
 
 - 检查：`command -v tmeet`
-- 未安装：执行 `npm install -g @tencentcloud/tmeet@latest`
+- **`command -v tmeet` 找不到、但用户说已装过**：tmeet 可能装在 nvm/fnm 等 Node 版本管理器下（PATH 未覆盖）。先查 `ls ~/.nvm/versions/node/*/bin/tmeet ~/.fnm/*/installation/bin/tmeet 2>/dev/null`，找到后用其**绝对路径**调用，无需重装
+- 未安装：执行 `npm install -g @tencentcloud/tmeet@latest`（若被环境策略拦截全局安装，改走 Cherry 托管 CLI：`cli_search` 搜不到 tmeet 时，用 `cli_install` 装 `npm:@tencentcloud/tmeet`）
 - 若 node/npm 也不存在：告知用户先安装 Node.js LTS（nodejs.org），装好后再继续
 - 安装失败：把报错原文展示给用户，检查网络或 npm 源后重试
 
@@ -73,6 +74,7 @@ metadata:
 
 - 返回多场候选 → 用表格列出（会议号、主题、时间）让用户确认，不要擅自替用户选
 - `meeting get` 成功后获得：主题、起止时间、会议号、会议类型、主持人、入会链接、录制列表（含 `permission_status`）、子会议列表（周期性会议）
+- **⚠️ Rooms 会议室会议 / 个人会议号会议（特殊场景）**：`meeting get --meeting-code` 会返回「个人会议号会议」的固定条目（subject 常为「XXX的个人会议室」、status 常为「待开始」、无录制无纪要），**这不是实际会议**。此时改走 `record search --meeting-code` 定位实际录制（拿到实际 `meeting_id`、`record_file_id`、录制起止、`has_smart_minutes`/`has_transcript_content`）；真实会议主题取智能纪要的「会议主题」字段；`report participants` 对 Rooms 会议通常 9042 无权限，参会明细标注「未获取」
 
 ### 拉取内容（三类数据都要拉）
 
