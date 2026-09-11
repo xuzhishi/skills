@@ -122,9 +122,12 @@ Chrome 是后续工具（agent-browser-automation）的必需依赖，必须先�
 ### Mac 系统
 
 1. **检查 Homebrew**：`which brew`
-   - 未安装：Agent 直接执行安装（无需用户操作）：
+   - 未安装 → **Agent 先自动安装**（非交互模式，无需用户操作）：
      `NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
    - 装完 `which brew` 验证；若 PATH 未生效，用 `eval "$(/opt/homebrew/bin/brew shellenv)"` 刷新后继续
+   - ⚠️ 若自动安装因权限失败（全新机器创建 `/opt/homebrew`（Apple Silicon）或 `/usr/local`（Intel）目录需要 sudo，Agent 无法提供密码）→ **才停下交用户**在其终端执行一次官方命令（会提示输入登录密码）：
+     `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+     完成后回复，Agent 验证并继续
 
 2. **Node.js**：先 `node --version && npm --version` 验证
    - 验证通过 → ✓ 直接用现有的，跳过安装
@@ -139,15 +142,15 @@ Chrome 是后续工具（agent-browser-automation）的必需依赖，必须先�
 ### Windows 系统
 
 1. **检查 Scoop**：`scoop --version`
-   - 未安装 → **停下等用户**（用户动手一次）：
-     ```
-     1. 按 Win 键输入 PowerShell，直接打开（普通模式）
-     2. 在这个普通 PowerShell 窗口里依次执行下面两行（**安装必须用普通权限执行，不要用「以管理员身份运行」——管理员会话会把 Scoop 装到错误位置，导致普通 shell 找不到**）：
-        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-        （如果提示是否更改，输入 Y 回车）
-        irm get.scoop.sh | iex
-     完成后回复"装好了"。
-     ```
+   - 未安装 → **Agent 直接自动安装**（Scoop 官方安装不需要管理员权限，普通会话即可，可全自动）：
+     - Agent 的 shell 若非 PowerShell，用 `powershell -NoProfile -Command "..."` 调用执行：
+       ```
+       Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+       irm get.scoop.sh | iex
+       ```
+       （`-Force` 跳过交互确认提示；**绝不用「以管理员身份运行」**，管理员会话会把 Scoop 装到错误位置，导致普通 shell 找不到）
+     - 装完验证：**用全新的 shell 会话**执行 `scoop --version`，或直接用 `$env:USERPROFILE\scoop\shims\scoop.exe --version`（安装刚完成时当前会话 PATH 未刷新属正常现象，不要在当前会话反复刷新）
+   - 仅当自动安装失败（网络不通、执行策略被锁定等）→ 才停下交用户在其**普通 PowerShell** 窗口执行同样两条命令，等待确认
    - 用户完成后验证：**用全新的 shell 会话执行 `scoop --version`**（安装刚完成时当前会话 PATH 未刷新是正常现象，不要在当前会话反复刷新；或用 `$env:USERPROFILE\scoop\shims\scoop.exe --version` 直接验证）
 
 2. **Node.js**：`node --version` 验证
