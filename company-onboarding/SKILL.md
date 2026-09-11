@@ -141,9 +141,10 @@ Chrome 是后续工具（agent-browser-automation）的必需依赖，必须先�
 1. **检查 Scoop**：`scoop --version`
    - 未安装 → **停下等用户**（用户动手一次）：
      ```
-     1. 按 Win 键输入 PowerShell，**普通打开即可（不要用「以管理员身份运行」，管理员模式会把 Scoop 装到错误位置，导致普通 shell 找不到）**
-     2. 依次执行下面两行：
+     1. 按 Win 键输入 PowerShell，直接打开（普通模式）
+     2. 在这个普通 PowerShell 窗口里依次执行下面两行（**安装必须用普通权限执行，不要用「以管理员身份运行」——管理员会话会把 Scoop 装到错误位置，导致普通 shell 找不到**）：
         Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+        （如果提示是否更改，输入 Y 回车）
         irm get.scoop.sh | iex
      完成后回复"装好了"。
      ```
