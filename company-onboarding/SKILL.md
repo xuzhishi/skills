@@ -126,20 +126,22 @@ Chrome 是后续工具（agent-browser-automation）的必需依赖，必须先�
      `NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
    - 装完 `which brew` 验证；若 PATH 未生效，用 `eval "$(/opt/homebrew/bin/brew shellenv)"` 刷新后继续
 
-2. **Node.js**：先 `node --version && npm --version`
-   - 验证通过 → ✓ 跳过安装
-   - 缺失或失败 → Agent 直接 `brew install node`（无需询问用户），装完重新验证直到通过
+2. **Node.js**：先 `node --version && npm --version` 验证
+   - 验证通过 → ✓ 直接用现有的，跳过安装
+   - 验证失败时先查 `brew list --versions node`（用户可能已用 brew 装过，只是当前 shell 环境未加载）：已有 → 定位其安装路径直接使用，**绝不重复安装**
+   - 确认未安装 → Agent 直接 `brew install node`（无需询问用户），装完重新验证直到通过
 
-3. **Python**：先 `python3 --version && pip3 --version`
-   - 验证通过 → ✓ 跳过安装
-   - 缺失或失败 → Agent 直接 `brew install python`，装完重新验证直到通过
+3. **Python**：先 `python3 --version && pip3 --version` 验证
+   - 验证通过 → ✓ 直接用现有的，跳过安装
+   - 验证失败时先查 `brew list --versions python`（用户可能已用 brew 装过）：已有 → 直接使用，**绝不重复安装**
+   - 确认未安装 → Agent 直接 `brew install python`，装完重新验证直到通过
 
 ### Windows 系统
 
 1. **检查 Scoop**：`scoop --version`
-   - 未安装 → **停下等用户**（需要管理员 PowerShell，用户动手一次）：
+   - 未安装 → **停下等用户**（用户动手一次）：
      ```
-     1. 按 Win 键输入 PowerShell，右键「以管理员身份运行」
+     1. 按 Win 键输入 PowerShell，**普通打开即可（不要用「以管理员身份运行」，管理员模式会把 Scoop 装到错误位置，导致普通 shell 找不到）**
      2. 依次执行下面两行：
         Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
         irm get.scoop.sh | iex
