@@ -5,7 +5,7 @@ import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 // src/shared/version.ts
-var VERSION = "0.1.1";
+var VERSION = "0.1.2";
 
 // src/shared/constants.ts
 var DEFAULT_BOARD_URL = "https://board.hub.xzs";
