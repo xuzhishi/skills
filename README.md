@@ -7,6 +7,6 @@ Skill 集合，发布到 [skills.sh](https://skills.sh) 市场。
 | Skill | 说明 |
 | --- | --- |
 | [company-onboarding](company-onboarding/SKILL.md) | 公司新员工环境配置向导：自动检查并安装运行时环境（Node.js、Python）、CLI 工具（wecom-cli、tencentmeeting-cli、agent-browser），安装技能市场技能，配置 Outline MCP，引导完成企业微信 bot、腾讯会议、Outline 认证，并验证全部功能。支持 Mac 和 Windows，面向技术和非技术员工 |
-| [meeting-to-outline](meeting-to-outline/SKILL.md) | 腾讯会议记录归档：从腾讯会议拉取会议记录（基本信息、智能纪要、待办、参会明细、逐字转写），整理成结构化文档写入 Outline 知识库 |
+| [meeting-to-outline](meeting-to-outline/SKILL.md) | 腾讯会议记录归档：从腾讯会议拉取会议记录（基本信息、智能纪要、待办、参会明细、逐字转写），整理成结构化文档写入 Outline 知识库；已安装 outline-promeeting-update 时接着做会后更新 |
 | [agent-browser-automation](agent-browser-automation/SKILL.md) | 人与 Agent 共用可见的真实 Chrome：独立 profile 持久登录，窗口始终显示，用户可随时接手。不是通用浏览器自动化入口 |
-| [outline-promeeting-update](outline-promeeting-update/SKILL.md) | Outline 会后同步：根据指定的 Outline 会议纪要，整篇重写项目「进度与待办」首页（当前全貌），并新建一篇只记本次变化的会议子文档；需要时同步更新「项目文档」（PRD）；绝不修改会议纪要，不清晰主动询问 |
+| [outline-promeeting-update](outline-promeeting-update/SKILL.md) | Outline 会后同步：根据指定的 Outline 会议纪要，找出会议涉及的所有项目（经用户确认），逐个整篇重写「进度与待办」首页（当前全貌），并新建一篇只记本次变化的会议子文档；需要时同步更新「项目文档」（PRD）；绝不修改会议纪要，不清晰主动询问；已安装 outline-board-sync 时接着同步每个项目的看板和总看板 |
