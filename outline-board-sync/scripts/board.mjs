@@ -5,7 +5,7 @@ import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 // src/shared/version.ts
-var VERSION = "0.1.2";
+var VERSION = "0.1.3";
 
 // src/shared/constants.ts
 var DEFAULT_BOARD_URL = "https://board.hub.xzs";
@@ -384,9 +384,17 @@ function prettyChanges(r) {
   lines.push(`共 ${r.changes.length} 条`);
   return lines.join("\n");
 }
+function prettyOverview(r) {
+  return `「总看板」文档：${r.url}
+文档 ID：${r.documentId}
+总看板页面：${r.boardUrl}`;
+}
 function prettyInitOverview(r) {
-  return `${r.created ? "已创建「总看板」文档集" : "「总看板」文档集已存在"}：${r.url ?? r.collectionId}
-文档集 ID：${r.collectionId}`;
+  const head = r.created ? "已创建「总看板」文档" : r.adopted ? "已登记「总看板」文档" : "「总看板」文档已存在";
+  return `${head}：${r.url}
+文档 ID：${r.documentId}
+总看板页面：${r.boardUrl}
+注意：不要编辑这篇文档（会破坏嵌入）。`;
 }
 function errorJson(err) {
   const { status, details, hint, usage } = err.extra;
@@ -528,6 +536,9 @@ function hintForStatus(status, code) {
   if (code === "payload_too_large") return "请求体超过 16 MB：请分批同步（每批最多 1000 条）。";
   if (code === "forbidden") return "看板服务按 Outline 权限判断：你需要对该项目的文档（或文档集）有编辑权限。";
   if (code === "admin_required") return "只有 Outline 管理员可以执行该操作。";
+  if (code === "overview_not_configured") {
+    return "Outline 管理员可执行 init-overview --collection <文档集ID> --after <文档ID> 新建「总看板」文档，或 init-overview --document <文档ID> 登记已有文档。";
+  }
   return void 0;
 }
 async function apiRequest(ctx, method, path, opts = {}) {
@@ -998,20 +1009,74 @@ var COMMANDS = [
     pretty: (r) => prettyChanges(r)
   },
   {
+    name: "overview",
+    summary: "查看「总看板」文档的链接",
+    usage: "overview",
+    details: [
+      "输出 {documentId, url, boardUrl}：url 是 Outline 中「总看板」文档的链接，boardUrl 是嵌入的总看板页面。",
+      "「总看板」是一篇文档，放在哪里由管理员决定；还没有设置（或已在 Outline 中删除、归档）时返回 overview_not_configured，由管理员用 init-overview 创建或登记。"
+    ],
+    mcpTool: "board_get_overview",
+    endpoint: "GET /api/overview",
+    requiresToken: true,
+    options: {},
+    run: async (ctx, args) => {
+      takePositionals(args, "overview", []);
+      return apiRequest(ctx, "GET", "/overview");
+    },
+    pretty: (r) => prettyOverview(r)
+  },
+  {
     name: "init-overview",
-    summary: "（管理员）创建置顶、全员只读的「总看板」文档集，幂等",
-    usage: "init-overview [--height 900]",
-    details: ["仅 Outline 管理员可执行。项目需用 project-set --in-overview true 选择加入。"],
+    summary: "（管理员）创建或登记「总看板」文档，幂等",
+    usage: "init-overview --collection <文档集ID> [--parent <文档ID>] [--after <文档ID> | --index <位置>] [--title 总看板] [--height 900]  |  init-overview --document <文档ID>",
+    details: [
+      "仅 Outline 管理员可执行。已有「总看板」文档时直接返回它（created=false），不看其他参数。",
+      "新建：放在 --collection 文档集里、--parent 文档下（省略 = 文档集最上层），紧跟在 --after 那篇同级文档之后，或放在第 --index 位（0 = 最前，默认 0）。文档正文只有一个嵌入总看板页面的嵌入，图标 📊，全宽；创建后不要编辑它。",
+      "登记已有文档：--document <文档ID>（其正文须嵌入总看板页面），不创建任何东西，不能再给位置参数。",
+      "文档 ID 可以是 uuid、urlId 或链接末段。项目需用 project-set --in-overview true 选择加入总看板。"
+    ],
+    examples: [
+      "init-overview --collection <文档集ID> --after <文档ID>",
+      "init-overview --collection <文档集ID> --index 0",
+      "init-overview --document <文档ID>"
+    ],
     mcpTool: "board_init_overview",
     endpoint: "POST /api/overview/init",
     requiresToken: true,
     options: {
-      height: { type: "string", value: "<像素>", help: "嵌入高度，默认 900" }
+      collection: { type: "string", value: "<文档集ID>", help: "新建时必填：放在哪个文档集" },
+      parent: { type: "string", value: "<文档ID>", help: "父文档；省略 = 文档集最上层" },
+      after: { type: "string", value: "<文档ID>", help: "排在这篇同级文档之后" },
+      index: { type: "string", value: "<位置>", help: "同级中的位置，0 = 最前（默认 0）；与 --after 二选一" },
+      title: { type: "string", value: "<标题>", help: "文档标题，默认「总看板」" },
+      height: { type: "string", value: "<像素>", help: "嵌入高度，默认 900" },
+      document: { type: "string", value: "<文档ID>", help: "登记已有的「总看板」文档（正文须嵌入总看板页面）" }
     },
     run: async (ctx, args) => {
       takePositionals(args, "init-overview", []);
-      const height = intFlag(args.flags, "height", usageOf("init-overview"));
-      return apiRequest(ctx, "POST", "/overview/init", { body: height !== void 0 ? { height } : {} });
+      const usage = usageOf("init-overview");
+      const body = {};
+      const fields = [
+        ["collection", "collectionId"],
+        ["parent", "parentDocumentId"],
+        ["after", "afterDocumentId"],
+        ["title", "title"],
+        ["document", "adoptDocumentId"]
+      ];
+      for (const [flag, field] of fields) {
+        const value = stringFlag(args.flags, flag);
+        if (value !== void 0) body[field] = value;
+      }
+      const index = intFlag(args.flags, "index", usage);
+      if (index !== void 0) body.index = index;
+      const height = intFlag(args.flags, "height", usage);
+      if (height !== void 0) body.height = height;
+      if (body.adoptDocumentId !== void 0 && ["collectionId", "parentDocumentId", "afterDocumentId", "index"].some((k) => k in body)) {
+        throw usageError("--document（登记已有文档）不能与 --collection、--parent、--after、--index 同时使用", usage);
+      }
+      if (body.afterDocumentId !== void 0 && body.index !== void 0) throw usageError("--after 与 --index 只能二选一", usage);
+      return apiRequest(ctx, "POST", "/overview/init", { body });
     },
     pretty: (r) => prettyInitOverview(r)
   }
@@ -1050,7 +1115,7 @@ function helpText() {
     "  编号：待办 MMDD-NN（如 0922-01）、模块 K01、里程碑 M01、风险 R01，项目内唯一；已有编号沿用，新号用 next-code 查询",
     `  状态：${ITEM_STATUSES.map((s) => `${s} ${STATUS_LABELS[s]}`).join(" / ")}`,
     "  sync 默认增量；full 模式会把本次未出现的条目标记为已移除，只在重建时使用，先 --dry-run",
-    "  「看板」文档由服务端创建，永远不要编辑它"
+    "  「看板」「总看板」文档由服务端创建，永远不要编辑它们的正文；「总看板」的链接用 overview 查询"
   ].join("\n");
 }
 function commandHelp(command) {
